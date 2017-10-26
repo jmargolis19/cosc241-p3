@@ -13,6 +13,7 @@
 
 
 import mdp, util
+import sys
 
 from learningAgents import ValueEstimationAgent
 
@@ -93,11 +94,14 @@ class ValueIterationAgent(ValueEstimationAgent):
         
 
         # CHECK HERE
-        qvalue = 0
+        
+        max_so_far = (-1) * float(sys.float_info.max)
         for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
-            qvalue += p * self.values[nextState]
+            valueNextState = p * self.values[nextState]
+            if max_so_far < valueNextState:
+              max_so_Far = valueNextState
 
-        return qvalue
+        return max_so_far
 
     def computeActionFromValues(self, state):
         """
@@ -111,18 +115,18 @@ class ValueIterationAgent(ValueEstimationAgent):
         if self.mdp.isTerminal(state):
           return None
         else:
-          MAX_SO_FAR = 0
-          MAX_ACTION = None
+          max_so_far = (-1) * float(sys.float_info.max)
+          max_action = None
           possibleActions = self.mdp.getPossibleActions(state)
           for action in possibleActions:
             for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
               # CHECK: not sure if to multiply p or not
-              if MAX_SO_FAR < p * valueNextState:
-                MAX_SO_FAR = p * valueNextState
-                MAX_ACTION = action
+              if max_so_far < p * valueNextState:
+                max_so_far = p * valueNextState
+                max_action = action
 
-          return MAX_ACTION 
+          return max_action 
 
 
     def getPolicy(self, state):
