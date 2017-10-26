@@ -72,7 +72,12 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         # REFERENCE: https://docs.google.com/presentation/d/1sLjgsMcDeNcFJbytEtMNbA1rhsVwF1tPbJ_e4zU_JzQ/edit#slide=id.g27271cd14c_0_43
         # CONSTRAINT: Q(s, a) = R(s) + gamma * sum[P(s'|s,a) maxQ(s',a')]
-        return self.getValue(mdp.getTransitionStatesAndProbs(state,action)[1])
+        if self.mdp.isTerminal(state):
+          return None
+
+        for p, nextState in self.mdp.getTransitionStatesAndProbs(state, action):
+          if nextState == state:
+            return p * self.values[state]
 
     def computeActionFromValues(self, state):
         """
@@ -83,14 +88,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        if mdp.isTerminal(state):
+        if self.mdp.isTerminal(state):
           return None
         else:
           MAX_SO_FAR = 0
           MAX_ACTION = None
-          possibleActions = mdp.getPossibleActions(state)
+          possibleActions = self.mdp.getPossibleActions(state)
           for action in possibleActions:
-            for p, nextState in mdp.getTransitionStatesAndProbs(state, action):
+            for p, nextState in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
               if MAX_SO_FAR < valueNextState:
                 MAX_SO_FAR = valueNextState
