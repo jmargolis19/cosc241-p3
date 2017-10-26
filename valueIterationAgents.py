@@ -43,18 +43,36 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
 
+        #print "DOES THIS HAPPEN? ITERATION %d" % self.iterations
         # Write value iteration code here
         for i in range(0, self.iterations):
           values_copy = self.values.copy()
           delta = 0
+          #print "DOES THIS HAPPEN 1"
           for s in self.mdp.getStates():
-            self.values[s] = self.mdp.getReward(s, None, None) + self.discount * max([sum([prob * values_copy[s_next] for (prob, s_next) in mdp.getTransitionStatesAndProbs(s, a)]) for a in self.mdp.getPossibleActions(s)])
-            delta = max(delta, abs(values_copy[s] - values[s]))
+            if self.mdp.isTerminal(s):
+              self.values[s] = self.mdp.getReward(s, None, None)
+              continue
+            #print "DOES THIS HAPPEN 2"
+            
+            """
+            for a in mdp.getPossibleActions(s):
+              print "current state :" + str(s)
+              print a
+              for s2, p in mdp.getTransitionStatesAndProbs(s, a):
+                print s2, p
+            """
+            #print self.mdp.getReward(s, None, None)
+            #print [prob * values_copy[s_next] for (prob, s_next) in self.mdp.getTransitionStatesAndProbs(s, a)] for a in self.mdp.getPossibleActions(s)]
+            self.values[s] = self.mdp.getReward(s, None, None) + self.discount * max([ sum([prob * values_copy[s_next] for (s_next, prob) in self.mdp.getTransitionStatesAndProbs(s, a)]) for a in self.mdp.getPossibleActions(s)])
+            #delta = max(delta, abs(values_copy[s] - values[s]))
 
           """
           if delta < self.epsilon * (1 - self.discount) / self.discount:
             return self.values
+        
           """
+        #print self.values
 
 
 
@@ -72,12 +90,14 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         # REFERENCE: https://docs.google.com/presentation/d/1sLjgsMcDeNcFJbytEtMNbA1rhsVwF1tPbJ_e4zU_JzQ/edit#slide=id.g27271cd14c_0_43
         # CONSTRAINT: Q(s, a) = R(s) + gamma * sum[P(s'|s,a) maxQ(s',a')]
-        if self.mdp.isTerminal(state):
-          return None
+        
 
-        for p, nextState in self.mdp.getTransitionStatesAndProbs(state, action):
-          if nextState == state:
-            return p * self.values[state]
+        # CHECK HERE
+        qvalue = 0
+        for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
+            qvalue += p * self.values[nextState]
+
+        return qvalue
 
     def computeActionFromValues(self, state):
         """
@@ -95,10 +115,11 @@ class ValueIterationAgent(ValueEstimationAgent):
           MAX_ACTION = None
           possibleActions = self.mdp.getPossibleActions(state)
           for action in possibleActions:
-            for p, nextState in self.mdp.getTransitionStatesAndProbs(state, action):
+            for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
-              if MAX_SO_FAR < valueNextState:
-                MAX_SO_FAR = valueNextState
+              # CHECK: not sure if to multiply p or not
+              if MAX_SO_FAR < p * valueNextState:
+                MAX_SO_FAR = p * valueNextState
                 MAX_ACTION = action
 
           return MAX_ACTION 
