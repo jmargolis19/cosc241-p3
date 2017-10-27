@@ -43,28 +43,20 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
-
-        #print "DOES THIS HAPPEN? ITERATION %d" % self.iterations
         # Write value iteration code here
+
+        # CAVEAT HERE: DISTINGUISH PSEUDO-TERMINALS FROM ACTUAL TERMINALS
+        
+        
         for i in range(0, self.iterations):
           values_copy = self.values.copy()
           delta = 0
-          #print "DOES THIS HAPPEN 1"
+          
           for s in self.mdp.getStates():
             if self.mdp.isTerminal(s):
-              self.values[s] = self.mdp.getReward(s, None, None)
               continue
-            #print "DOES THIS HAPPEN 2"
             
-            """
-            for a in mdp.getPossibleActions(s):
-              print "current state :" + str(s)
-              print a
-              for s2, p in mdp.getTransitionStatesAndProbs(s, a):
-                print s2, p
-            """
-            #print self.mdp.getReward(s, None, None)
-            #print [prob * values_copy[s_next] for (prob, s_next) in self.mdp.getTransitionStatesAndProbs(s, a)] for a in self.mdp.getPossibleActions(s)]
+            print "DISCOUNT RATE: %f" % self.discount
             self.values[s] = self.mdp.getReward(s, None, None) + self.discount * max([ sum([prob * values_copy[s_next] for (s_next, prob) in self.mdp.getTransitionStatesAndProbs(s, a)]) for a in self.mdp.getPossibleActions(s)])
             #delta = max(delta, abs(values_copy[s] - values[s]))
 
@@ -92,16 +84,43 @@ class ValueIterationAgent(ValueEstimationAgent):
         # REFERENCE: https://docs.google.com/presentation/d/1sLjgsMcDeNcFJbytEtMNbA1rhsVwF1tPbJ_e4zU_JzQ/edit#slide=id.g27271cd14c_0_43
         # CONSTRAINT: Q(s, a) = R(s) + gamma * sum[P(s'|s,a) maxQ(s',a')]
         
-
+        """
         # CHECK HERE
-        
+        # NVM.
+        if self.mdp.isTerminal(state):
+          print "TERMINAL : " + str(self.mdp.getReward(state))
+          return self.mdp.getReward(state)
+        """
+
         max_so_far = (-1) * float(sys.float_info.max)
+        #max_so_far = 0
+        valueSum = 0
+
+
         for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
+            #print "here is p : %f" % p
+            #print "nextState = " + str(nextState)
+            #print "value[nextState] = " + str(self.values[nextState])
+            
+            
+            # AD HOC TO ACCOMMODATE TERMINAL
+            
+            if self.mdp.isTerminal(nextState):
+              return p * self.mdp.getReward(state, action, nextState)
+              print "HEY, THIS IS THE ACTUAL TERMINAL STATE (%f, %f, %f)" % (self.values[state], self.values[nextState], self.mdp.getReward(state, None, None))
+              return p * self.values[nextState]
+            
+
+            valueSum += p * self.values[nextState]
+            """
             valueNextState = p * self.values[nextState]
+            #print valueNextState
             if max_so_far < valueNextState:
-              max_so_Far = valueNextState
+              max_so_far = valueNextState
 
         return max_so_far
+        """
+        return valueSum
 
     def computeActionFromValues(self, state):
         """
