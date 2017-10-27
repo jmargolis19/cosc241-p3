@@ -55,6 +55,7 @@ class ValueIterationAgent(ValueEstimationAgent):
           for s in self.mdp.getStates():
             if self.mdp.isTerminal(s):
               continue
+              # this is to prevent the loop from evaluating the dummy terminal state
             
             self.values[s] = self.mdp.getReward(s, None, None) + self.discount * max([ sum([prob * values_copy[s_next] for (s_next, prob) in self.mdp.getTransitionStatesAndProbs(s, a)]) for a in self.mdp.getPossibleActions(s)])
             #delta = max(delta, abs(values_copy[s] - values[s]))
@@ -82,46 +83,13 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         # REFERENCE: https://docs.google.com/presentation/d/1sLjgsMcDeNcFJbytEtMNbA1rhsVwF1tPbJ_e4zU_JzQ/edit#slide=id.g27271cd14c_0_43
         # CONSTRAINT: Q(s, a) = R(s) + gamma * sum[P(s'|s,a) maxQ(s',a')]
-        
-        """
-        # CHECK HERE
-        # NVM.
-        if self.mdp.isTerminal(state):
-          print "TERMINAL : " + str(self.mdp.getReward(state))
-          return self.mdp.getReward(state)
-        """
-
-        max_so_far = (-1) * float(sys.float_info.max)
-        #max_so_far = 0
         valueSum = 0
 
-
         for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
-            #print "here is p : %f" % p
-            #print "nextState = " + str(nextState)
-            #print "value[nextState] = " + str(self.values[nextState])
-            
-            
-            # AD HOC TO ACCOMMODATE TERMINAL
-            """
-            if self.mdp.isTerminal(nextState):
-              print "HEY, THIS IS THE ACTUAL TERMINAL STATE (%f, %f, %f), prob = %f" % (self.getValue(state), self.getValue(nextState), self.mdp.getReward(state, None, None), p)
-              # return p * self.mdp.getReward(state, action, nextState)
-              
-              return self.mdp.getReward(state, action, nextState) + p*self.getValue(state)
-            """
-
-            #valueSum += p * self.getValue(nextState)
             valueSum += self.mdp.getReward(state, action, nextState) + p * self.discount * self.getValue(nextState)
-            """
-            valueNextState = p * self.values[nextState]
-            #print valueNextState
-            if max_so_far < valueNextState:
-              max_so_far = valueNextState
-
-        return max_so_far
-        """
+            
         return valueSum
+
 
     def computeActionFromValues(self, state):
         """
@@ -146,7 +114,6 @@ class ValueIterationAgent(ValueEstimationAgent):
             for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
               quality_action += p * valueNextState
-              # CHECK: not sure if to multiply p and self.discount or not
             if max_so_far < quality_action:
               max_so_far = quality_action
               max_action = action
