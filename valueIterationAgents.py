@@ -132,20 +132,24 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        if self.mdp.isTerminal(state):
+        possibleActions = self.mdp.getPossibleActions(state)
+
+        if self.mdp.isTerminal(state) or not possibleActions:
           return None
-          
+
         else:
           max_so_far = (-1) * float(sys.float_info.max)
           max_action = None
-          possibleActions = self.mdp.getPossibleActions(state)
+          
           for action in possibleActions:
+            quality_action = 0
             for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
+              quality_action += p * valueNextState
               # CHECK: not sure if to multiply p and self.discount or not
-              if max_so_far < p * self.discount * valueNextState:
-                max_so_far = p * self.discount * valueNextState
-                max_action = action
+            if max_so_far < quality_action:
+              max_so_far = quality_action
+              max_action = action
 
           return max_action 
 
