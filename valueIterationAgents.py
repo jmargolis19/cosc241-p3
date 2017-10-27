@@ -56,7 +56,6 @@ class ValueIterationAgent(ValueEstimationAgent):
             if self.mdp.isTerminal(s):
               continue
             
-            print "DISCOUNT RATE: %f" % self.discount
             self.values[s] = self.mdp.getReward(s, None, None) + self.discount * max([ sum([prob * values_copy[s_next] for (s_next, prob) in self.mdp.getTransitionStatesAndProbs(s, a)]) for a in self.mdp.getPossibleActions(s)])
             #delta = max(delta, abs(values_copy[s] - values[s]))
 
@@ -104,14 +103,16 @@ class ValueIterationAgent(ValueEstimationAgent):
             
             
             # AD HOC TO ACCOMMODATE TERMINAL
-            
+            """
             if self.mdp.isTerminal(nextState):
-              return p * self.mdp.getReward(state, action, nextState)
-              print "HEY, THIS IS THE ACTUAL TERMINAL STATE (%f, %f, %f)" % (self.values[state], self.values[nextState], self.mdp.getReward(state, None, None))
-              return p * self.values[nextState]
-            
+              print "HEY, THIS IS THE ACTUAL TERMINAL STATE (%f, %f, %f), prob = %f" % (self.getValue(state), self.getValue(nextState), self.mdp.getReward(state, None, None), p)
+              # return p * self.mdp.getReward(state, action, nextState)
+              
+              return self.mdp.getReward(state, action, nextState) + p*self.getValue(state)
+            """
 
-            valueSum += p * self.values[nextState]
+            #valueSum += p * self.getValue(nextState)
+            valueSum += self.mdp.getReward(state, action, nextState) + p * self.discount * self.getValue(nextState)
             """
             valueNextState = p * self.values[nextState]
             #print valueNextState
@@ -133,6 +134,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         if self.mdp.isTerminal(state):
           return None
+          
         else:
           max_so_far = (-1) * float(sys.float_info.max)
           max_action = None
@@ -140,9 +142,9 @@ class ValueIterationAgent(ValueEstimationAgent):
           for action in possibleActions:
             for nextState, p in self.mdp.getTransitionStatesAndProbs(state, action):
               valueNextState = self.getValue(nextState)
-              # CHECK: not sure if to multiply p or not
-              if max_so_far < p * valueNextState:
-                max_so_far = p * valueNextState
+              # CHECK: not sure if to multiply p and self.discount or not
+              if max_so_far < p * self.discount * valueNextState:
+                max_so_far = p * self.discount * valueNextState
                 max_action = action
 
           return max_action 
