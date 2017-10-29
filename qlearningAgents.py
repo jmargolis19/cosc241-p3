@@ -70,7 +70,7 @@ class QLearningAgent(ReinforcementAgent):
           maxQValue = (-1) * float(sys.float_info.max)
           maxAction = None
           for a in self.getLegalActions(state):
-            currQValue = getValue(state, a)
+            currQValue = self.getQValue(state, a)
             if maxQValue < currQValue:
               maxQValue = currQValue
               maxAction = a
@@ -91,7 +91,7 @@ class QLearningAgent(ReinforcementAgent):
           maxQValue = (-1) * float(sys.float_info.max)
           maxAction = None
           for a in self.getLegalActions(state):
-            currQValue = getValue(state, a)
+            currQValue = self.getQValue(state, a)
             if maxQValue < currQValue:
               maxQValue = currQValue
               maxAction = a
@@ -115,7 +115,9 @@ class QLearningAgent(ReinforcementAgent):
         action = None
         
         if util.flipCoin(self.epsilon):
-          
+          return random.choice(legalActions)
+        else:
+          return self.computeActionFromQValues(state)
 
         return action
 
