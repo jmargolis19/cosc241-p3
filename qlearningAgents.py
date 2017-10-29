@@ -131,12 +131,16 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         
-        oldQValue = self.values[(state,action)]
+        oldQValue = self.getQValue(state,action)
+
+        # self.values[(state,action)] = oldQValue + self.alpha*(reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue)
         
         if self.getLegalActions(nextState):
           self.values[(state,action)] = oldQValue + self.alpha*(reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue)
         else:
+          # handling the terminal case separately
           self.values[(state,action)] = oldQValue + self.alpha*(reward - oldQValue)
+        
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -198,15 +202,27 @@ class ApproximateQAgent(PacmanQAgent):
           Should return Q(state,action) = w * featureVector
           where * is the dotProduct operator
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        total = 0
+
+        features = self.featExtractor.getFeatures(state, action)
+        for feature in features:
+          w = self.getWeights()
+          total += w[feature] * features[feature]
+
+        return total
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        features = self.featExtractor.getFeatures(state, action)
+        for feature in features:
+          oldQValue = self.getQValue(state,action)
+          if self.getLegalActions(nextState):
+            diff = reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue
+          else:
+            diff = reward - oldQValue
+          self.weights[feature] = self.weights[feature] + self.alpha * diff * features[feature]
 
     def final(self, state):
         "Called at the end of each game."
