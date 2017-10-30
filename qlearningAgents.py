@@ -248,6 +248,8 @@ class ApproximateQAgent(PacmanQAgent):
         else: # handling the GAMEOVER state
           maxNextQValue = 0.0
 
+        assert maxNextQValue is not None
+
         diff = reward + self.discount * maxNextQValue - oldQValue
 
         for feature in features:

@@ -50,7 +50,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         
         for i in range(0, self.iterations):
           values_copy = self.values.copy()
-          delta = 0
+          # delta = 0
           
           for s in self.mdp.getStates():
             if self.mdp.isTerminal(s):
