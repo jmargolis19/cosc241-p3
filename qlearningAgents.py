@@ -131,17 +131,31 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         
-        oldQValue = self.getQValue(state,action)
-
-        # self.values[(state,action)] = oldQValue + self.alpha*(reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue)
+        # explicit version
+        oldQValue = self.getQValue(state, action)
+        maxNextAction = None 
+        maxNextQValue = (-1.0) * sys.float_info.max
         
+        if self.getLegalActions(nextState):
+          for a in self.getLegalActions(nextState):
+            nextQValue = self.getQValue(nextState, a)
+            if maxNextQValue < nextQValue:
+              maxNextQValue = nextQValue
+              maxNextAction = a
+        else: # handling the GAMEOVER state
+          maxNextQValue = 0.0
+
+        self.values[(state,action)] = oldQValue + self.alpha * (reward + self.discount * maxNextQValue - oldQValue)
+
+        """
+        # shorter version
         if self.getLegalActions(nextState):
           self.values[(state,action)] = oldQValue + self.alpha*(reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue)
         else:
           # handling the terminal case separately
           self.values[(state,action)] = oldQValue + self.alpha*(reward - oldQValue)
+        """
         
-
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
 
@@ -202,13 +216,20 @@ class ApproximateQAgent(PacmanQAgent):
           Should return Q(state,action) = w * featureVector
           where * is the dotProduct operator
         """
-        total = 0
 
+        total = 0.0
+
+        
         features = self.featExtractor.getFeatures(state, action)
+        w = self.getWeights()
         for feature in features:
-          w = self.getWeights()
-          total += w[feature] * features[feature]
-
+            total = total + w[feature] * features[feature]
+            #if action == 'exit':
+              #print "-----------------"
+              #print "for (s, a) : " + str((state,action))
+              #print total, feature, w[feature], features[feature]
+        #print "DISCOUNT RATE? %f" % self.discount
+        #print "total = %f" % total
         return total
 
     def update(self, state, action, nextState, reward):
@@ -216,13 +237,39 @@ class ApproximateQAgent(PacmanQAgent):
            Should update your weights based on transition
         """
         features = self.featExtractor.getFeatures(state, action)
+        
+        oldQValue = self.getQValue(state, action)
+        maxNextAction = None 
+        maxNextQValue = (-1.0) * sys.float_info.max
+        
+        if self.getLegalActions(nextState):
+          maxNextQValue = max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)])
+        else: # handling the GAMEOVER state
+          maxNextQValue = 0.0
+
+
         for feature in features:
-          oldQValue = self.getQValue(state,action)
-          if self.getLegalActions(nextState):
-            diff = reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue
-          else:
-            diff = reward - oldQValue
-          self.weights[feature] = self.weights[feature] + self.alpha * diff * features[feature]
+            self.weights[feature] = self.weights[feature] + self.alpha * (reward + self.discount * maxNextQValue - oldQValue) * features[feature]
+            # BUG RESOLVED HERE:
+            # THE PROBLEM WAS THAT I WAS TRYING TO GET MAX QVALUE (WHICH IS BEING UPDATED IN THIS LOOP)
+            # IN EACH STEP OF THE LOOP! THE MAX QVALUE MUST BE IDENTIFIED BEFORE THE LOOP.
+            
+            """
+            # for non-terminal cases
+            if self.getLegalActions(nextState):
+
+              diff = reward + self.discount*max([self.getQValue(nextState, a) for a in self.getLegalActions(nextState)]) - oldQValue
+              self.weights[feature] = self.weights[feature] + self.alpha * diff * features[feature]
+            # if the next state is a terminal state 
+            else:
+              diff = reward - oldQValue
+              self.weights[feature] = self.weights[feature] + self.alpha * diff * features[feature]
+            """
+            
+        
+        #if action == 'exit':
+        #print state, action, self.getQValue(state, action)
+        #print self.alpha, reward
 
     def final(self, state):
         "Called at the end of each game."
@@ -233,4 +280,5 @@ class ApproximateQAgent(PacmanQAgent):
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
             "*** YOUR CODE HERE ***"
+
             pass
